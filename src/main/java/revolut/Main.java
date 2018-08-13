@@ -1,50 +1,46 @@
 package revolut;
 
+import com.google.gson.Gson;
 import com.wizzardo.http.HttpConnection;
 import com.wizzardo.http.HttpServer;
+import com.wizzardo.http.request.Header;
+import com.wizzardo.http.response.Response;
 import com.wizzardo.http.response.Status;
 
 public class Main {
 
+  private static final Gson JSON = new Gson();
+
   public static void main(String[] args){
     final Bank bank = new LockingBank();
-    //final revolut.Bank bank = new revolut.EventLoopBank();
     HttpServer<HttpConnection> server = new HttpServer<>(8080);
     server.getUrlMapping()
         .append("/", (request, response) -> response.setBody("Running"))
         .append("/accounts/create", (request, response) -> {
           final String id = request.param("id");
           if (id==null||"".equals(id)){
-            response.setBody("Please specify id");
-            response.setStatus(Status._400);
+            return response(response, "Please specify id", Status._400);
           } else {
             final Result<Void> res = bank.createAccount(id);
             if (res.success){
-              response.setBody("");
-              response.setStatus(Status._200);
+              return response(response, res);
             } else {
-              response.setBody(res.comment);
-              response.setStatus(Status._500);
+              return response(response, res.comment, Status._500);
             }
           }
-          return response;
         })
         .append("/accounts/balance",(request, response) -> {
           final String id = request.param("id");
           if (id == null || "".equals(id)) {
-            response.setBody("Please specify id");
-            response.setStatus(Status._400);
+            return response(response, "Please specify id", Status._400);
           } else {
             final Result<Long> res = bank.getBalance(id);
             if (res.success) {
-              response.setBody(String.valueOf(res.value));
-              response.setStatus(Status._200);
+              return response(response, res);
             } else {
-              response.setBody(res.comment);
-              response.setStatus(Status._500);
+              return response(response, res.comment, Status._500);
             }
           }
-          return response;
         })
         .append("/accounts/topup",(request, response) -> {
           final String id = request.param("id");
@@ -55,22 +51,17 @@ public class Main {
           } catch (NumberFormatException nfe){
           }
           if (id == null || "".equals(id)) {
-            response.setBody("Please specify id");
-            response.setStatus(Status._400);
+            return response(response, "Please specify id", Status._400);
           } else if (amount <= 0l){
-            response.setBody("Please specify correct amount");
-            response.setStatus(Status._400);
+            return response(response, "Please specify correct amount", Status._400);
           } else {
             final Result<Long> res = bank.topup(id,amount);
             if (res.success) {
-              response.setBody(String.valueOf(res.value));
-              response.setStatus(Status._200);
+              return response(response, res);
             } else {
-              response.setBody(res.comment);
-              response.setStatus(Status._500);
+              return response(response, res.comment, Status._500);
             }
           }
-          return response;
         })
         .append("/accounts/withdraw",(request, response) -> {
           final String id = request.param("id");
@@ -81,22 +72,17 @@ public class Main {
           } catch (NumberFormatException nfe){
           }
           if (id == null || "".equals(id)) {
-            response.setBody("Please specify id");
-            response.setStatus(Status._400);
+            return response(response, "Please specify id", Status._400);
           } else if (amount <= 0l){
-            response.setBody("Please specify correct amount");
-            response.setStatus(Status._400);
+            return response(response, "Please specify correct amount", Status._400);
           } else {
             final Result<Long> res = bank.withdraw(id,amount);
             if (res.success) {
-              response.setBody(String.valueOf(res.value));
-              response.setStatus(Status._200);
+              return response(response, res);
             } else {
-              response.setBody(res.comment);
-              response.setStatus(Status._500);
+              return response(response, res.comment, Status._500);
             }
           }
-          return response;
         })
         .append("/accounts/transfer",(request, response) -> {
           final String id1 = request.param("from");
@@ -108,24 +94,34 @@ public class Main {
           } catch (NumberFormatException nfe){
           }
           if (id1 == null || "".equals(id1) || id2 == null || "".equals(id2)) {
-            response.setBody("Please specify from and to parameters");
-            response.setStatus(Status._400);
+            return response(response, "Please specify from and to parameters", Status._400);
           } else if (amount <= 0l){
-            response.setBody("Please specify correct amount");
-            response.setStatus(Status._400);
+            return response(response, "Please specify correct amount", Status._400);
           } else {
             final Result<Long> res = bank.transfer(id1,id2,amount);
             if (res.success) {
-              response.setBody(String.valueOf(res.value));
-              response.setStatus(Status._200);
+              return response(response, res);
             } else {
-              response.setBody(res.comment);
-              response.setStatus(Status._500);
+              return response(response, res.comment, Status._500);
             }
           }
-          return response;
         });
 
     server.start();
   }
+
+  private static Response response(Response response, Result<?> result) {
+    response.header(Header.KV_CONTENT_TYPE_APPLICATION_JSON);
+    response.setBody(JSON.toJson(result));
+    response.setStatus(result.success ? Status._200 : Status._500);
+    return response;
+  }
+
+  private static Response response(Response response, String text, Status status) {
+    response.header(Header.KV_CONTENT_TYPE_APPLICATION_JSON);
+    response.setBody(JSON.toJson(new Result<Void>(text, null)));
+    response.setStatus(status);
+    return response;
+  }
+
 }

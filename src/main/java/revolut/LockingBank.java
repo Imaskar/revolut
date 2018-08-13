@@ -61,6 +61,7 @@ public class LockingBank implements Bank {
     }  else if (accTo == null) {
       return new Result<>("Account with id "+to+" not found", null);
     } else {
+      // Deadlock prevention start
       LockingAccount minId,maxId;
       final int compare = cmp.compare(from, to);
       if (compare==0){
@@ -72,6 +73,7 @@ public class LockingBank implements Bank {
         minId = accTo;
         maxId = accFrom;
       }
+      // Deadlock prevention end
       final Lock l1 = minId.getLock();
       final Lock l2 = maxId.getLock();
       try {

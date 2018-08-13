@@ -2,6 +2,7 @@ package revolut;
 
 import org.junit.AssumptionViolatedException;
 import org.junit.Test;
+import org.junit.Ignore;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.options.Options;
@@ -28,6 +29,7 @@ public class PerformanceTest {
     bank.topup(TO_ID, AMOUNT);
   }
 
+  @Ignore
   @Test
   public void
   launchBenchmark() throws Exception {

@@ -15,3 +15,5 @@ In browser:
     http://localhost:8080/accounts/topup?id=2&amount=200  
     http://localhost:8080/accounts/transfer?from=2&to=1&amount=20  
     http://localhost:8080/accounts/balance?id=1  
+
+Please note, that it is linux-only, because wizzardo-http library uses high performance native epoll library.
